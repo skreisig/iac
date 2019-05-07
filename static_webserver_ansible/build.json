@@ -24,17 +24,15 @@
   ],
   "provisioners": [
     {
-      "type": "file",
-      "source": "static_webserver/assets/index.html",
-      "destination": "/tmp/index.html"
-    },
-    {
       "type": "shell",
       "scripts": [
         "common/scripts/ubuntu/base.sh",
-        "static_webserver/scripts/install_nginx.sh",
-        "common/scripts/ubuntu/cleanup.sh"
+        "static_webserver_ansible/scripts/install.sh"
       ]
+    },
+    {
+      "type": "ansible",
+      "playbook_file": "static_webserver_ansible/assets/nginx_install.yml"
     }
   ]
 }

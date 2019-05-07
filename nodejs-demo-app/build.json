@@ -1,0 +1,36 @@
+{
+  "variables": {
+    "prefix": "skreisig"
+  },
+  "builders": [{
+    "type": "amazon-ebs",
+    "region": "eu-west-1",
+    "source_ami_filter": {
+      "filters": {
+        "virtualization-type": "hvm",
+        "name": "ubuntu/images/*ubuntu-bionic-18.04-amd64-server-*",
+        "root-device-type": "ebs"
+      },
+      "owners": ["099720109477"],
+      "most_recent": true
+    },
+    "instance_type": "t3.medium",
+    "ssh_username": "ubuntu",
+    "ami_name": "{{user `prefix`}}-static-{{timestamp}}"
+  }],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "static_webserver/assets/index.html",
+      "destination": "/tmp/index.html"
+    },
+    {
+      "type":"shell",
+      "scripts": [
+        "common/scripts/ubuntu/base.sh",
+        "nodejs-demo-app/scripts/install.sh",
+        "common/scripts/ubuntu/cleanup.sh"
+      ]
+    }
+  ]
+}
