@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
     bucket = "jambit-iac-terraform"
-    # key = "/<userprefix>/terraform.tfstate"
+    key = "skreisig/terraform.tfstate"
     region = "eu-west-1"
   }
 }
