@@ -1,4 +1,3 @@
-
 provider "aws" {
   region = "eu-west-1"
   version = "~> 2"
@@ -6,6 +5,6 @@ provider "aws" {
 
 terraform {
   backend "local" {
-    path = "../tf"
+    path = "../tf/tfstate"
   }
 }

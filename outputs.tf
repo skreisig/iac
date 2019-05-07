@@ -1,5 +1,3 @@
-
-
-output "public-ip" {
-  value = "${aws_instance.demo.public_ip}"
+output "A-Record-Name" {
+  value = "${aws_route53_record.skreisig.*.name}"
 }

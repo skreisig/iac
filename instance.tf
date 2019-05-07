@@ -1,20 +1,32 @@
-
-
 data "aws_ami" "demo-ami" {
   most_recent = true
-  owners = ["self", "099720109477"]
+  owners = [
+    "self",
+    "287283636362"]
 
   filter {
     name = "name"
-    values = ["*ubuntu-bionic-18.04-amd64-server-*"]
+    values = [
+      "nodejs-demo-*"]
   }
   filter {
     name = "state"
-    values = ["available"]
+    values = [
+      "available"]
   }
 }
 
 resource "aws_instance" "demo" {
+
+  count = "${length(var.hostnames)}"
+
+  user_data = <<EOT
+    #cloud-config
+    preserve_hostname: false
+    manage_etc_hosts: true
+    hostname: ${var.hostnames[count.index]}-${count.index + 1}
+    fqdn: ${var.hostnames[count.index]}-${count.index + 1}
+  EOT
 
   ami = "${data.aws_ami.demo-ami.id}"
   instance_type = "t3.small"
@@ -32,6 +44,21 @@ resource "aws_instance" "demo" {
   }
 }
 
+data "aws_route53_zone" "demo" {
+  name = "iac.trainings.jambit.de"
+}
+
+resource "aws_route53_record" "skreisig" {
+  count = "${length(var.hostnames)}"
+
+  zone_id = "${data.aws_route53_zone.demo.zone_id}"
+  name = "${var.hostnames[count.index]}.${data.aws_route53_zone.demo.name}"
+  type = "A"
+  ttl = "60"
+  records = [
+    "${aws_instance.demo.*.public_ip[count.index]}"]
+}
+
 resource "aws_security_group" "demo" {
   vpc_id = "${data.aws_vpc.vpc.id}"
 
@@ -39,14 +66,24 @@ resource "aws_security_group" "demo" {
     from_port = 22
     to_port = 22
     protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [
+      "0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port = 8080
+    to_port = 8080
+    protocol = "tcp"
+    cidr_blocks = [
+      "0.0.0.0/0"]
   }
 
   egress {
     from_port = 0
     protocol = "-1"
     to_port = 0
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [
+      "0.0.0.0/0"]
   }
 
   tags {
