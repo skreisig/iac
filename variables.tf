@@ -15,5 +15,5 @@ variable "db_password" {
 variable "hostnames" {
   description = "hostnames"
   type = "list"
-  default = ["skreisig","iamgroot", "jambit", "dev", "sandbox"]
+  default = ["skreisig","iamgroot"]#, "jambit", "dev", "sandbox"]
 }

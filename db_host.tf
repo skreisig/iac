@@ -23,18 +23,32 @@ resource "aws_instance" "db_host" {
   count = "${length(var.hostnames)}"
 
   user_data = <<EOT
-    #cloud-config
-    preserve_hostname: false
-    manage_etc_hosts: true
-    hostname: ${var.hostnames[count.index]}-${count.index + 1}
-    fqdn: ${var.hostnames[count.index]}-${count.index + 1}
-  EOT
+#cloud-config
+preserve_hostname: false
+manage_etc_hosts: true
+hostname: ${var.hostnames[count.index]}-${count.index + 1}
+fqdn: ${var.hostnames[count.index]}-${count.index + 1}
+
+write_files:
+- content: |
+    #db_variables
+    DB_HOST="${aws_db_instance.my_db.address}"
+    DB_DB="${aws_db_instance.my_db.name}"
+    DB_USER="${aws_db_instance.my_db.username}"
+    DB_PASS="${aws_db_instance.my_db.password}"
+  owner: root:root
+  path: /etc/nodejs.env
+
+runcmd:
+    - "sudo systemctl enable hello.service"
+    - "sudo systemctl start hello.service"
+EOT
 
   ami = "${data.aws_ami.db_ami.id}"
   instance_type = "t3.small"
 
   associate_public_ip_address = true
-  subnet_id = "${element(aws_subnet.public.*.id, count.index)}"
+  subnet_id = "${element(aws_subnet.private.*.id, count.index)}" #--> private
 
   key_name = "${var.prefix}"
   vpc_security_group_ids = [
@@ -43,28 +57,6 @@ resource "aws_instance" "db_host" {
 
   tags {
     Name = "${var.prefix}"
-  }
-
-  connection {
-    type = "ssh"
-    user = "ubuntu"
-    private_key = "${file("/Users/skreisig/.ssh/id_rsa")}"
-  }
-
-  # Copies the string in content into /tmp/file.log
-  provisioner "file" {
-    content = <<EOT
-      #db_variables
-      DB_HOST="${aws_db_instance.my_db.address}"
-      DB_DB="${aws_db_instance.my_db.name}"
-      DB_USER="${aws_db_instance.my_db.username}"
-      DB_PASS="${aws_db_instance.my_db.password}"
-    EOT
-    destination = "/tmp/nodejs.env"
-  }
-
-  provisioner "remote-exec" {
-    script = "scripts/config_env.sh"
   }
 }
 
