@@ -18,15 +18,17 @@ data "aws_ami" "demo-ami" {
 
 resource "aws_instance" "demo" {
 
-  count = "${length(var.hostnames)}"
+  count = 30
+  #"${length(var.hostnames)}"
 
   user_data = <<EOT
     #cloud-config
     preserve_hostname: false
     manage_etc_hosts: true
-    hostname: ${var.hostnames[count.index]}-${count.index + 1}
-    fqdn: ${var.hostnames[count.index]}-${count.index + 1}
+    hostname: "demo-${count.index}"
+    fqdn: "demo-${count.index}"
   EOT
+  #hostname = ${var.hostnames[count.index]}-${count.index + 1}
 
   ami = "${data.aws_ami.demo-ami.id}"
   instance_type = "t3.small"
@@ -44,6 +46,26 @@ resource "aws_instance" "demo" {
   }
 }
 
+resource "null_resource" "test" {
+  count = "${aws_instance.demo.count}"
+  #"${length(var.hostnames)}"
+
+  triggers {
+    aws_instances = "${join(",", aws_instance.demo.*.id)}"
+  }
+
+  connection {
+    host = "${aws_instance.demo.*.public_ip[count.index]}"
+    type = "ssh"
+    user = "ubuntu"
+    private_key = "${file("/Users/skreisig/.ssh/id_rsa")}"
+  }
+
+  provisioner "remote-exec" {
+    script = "scripts/dbspaming.sh"
+  }
+}
+/*
 data "aws_route53_zone" "demo" {
   name = "iac.trainings.jambit.de"
 }
@@ -57,7 +79,7 @@ resource "aws_route53_record" "skreisig" {
   ttl = "60"
   records = [
     "${aws_instance.demo.*.public_ip[count.index]}"]
-}
+}*/
 
 resource "aws_security_group" "demo" {
   vpc_id = "${data.aws_vpc.vpc.id}"
