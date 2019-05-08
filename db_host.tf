@@ -60,21 +60,6 @@ EOT
   }
 }
 
-data "aws_route53_zone" "db_host" {
-  name = "iac.trainings.jambit.de"
-}
-
-resource "aws_route53_record" "skreisig" {
-  count = "${length(var.hostnames)}"
-
-  zone_id = "${data.aws_route53_zone.db_host.zone_id}"
-  name = "${var.hostnames[count.index]}.${data.aws_route53_zone.db_host.name}"
-  type = "A"
-  ttl = "60"
-  records = [
-    "${aws_instance.db_host.*.public_ip[count.index]}"]
-}
-
 resource "aws_security_group" "db_host" {
   vpc_id = "${aws_vpc.vpc.id}"
 
@@ -90,8 +75,7 @@ resource "aws_security_group" "db_host" {
     from_port = 8080
     to_port = 8080
     protocol = "tcp"
-    cidr_blocks = [
-      "0.0.0.0/0"]
+    security_groups = ["${aws_security_group.elb.id}"]
   }
 
   egress {
